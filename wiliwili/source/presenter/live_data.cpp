@@ -22,23 +22,50 @@ void LiveDataRequest::requestData(int roomid) {
                 qualityDescriptionMap[i.qn] = i.desc;
             }
 
-            // 选择第一个 protocol 的 第一个 format 的第一个 codec 作为播放源
-            // protocol: http_stream / http_hls
-            // format: flv / ts / fmp4
-            // codec: avc / hevc / av1
-            bilibili::LiveStream stream;
-            for (auto& i : liveRoomPlayInfo.playurl_info.playurl.stream) {
-                stream = i;
-                break;
+            // 根据用户设置的编码偏好 (AVC/HEVC/AV1) 匹配直播流
+            // 注意: B站直播的 FLV 容器中 HEVC 为非标 tag 12，标准 demuxer 无法识别；
+            // 故 HEVC 优先选取 fmp4 / ts 容器 (HLS)，AVC 则支持 flv / fmp4 / ts
+            std::string target_codec = "avc";
+            if (bilibili::BilibiliClient::VIDEO_CODEC == 12) {
+                target_codec = "hevc";
+            } else if (bilibili::BilibiliClient::VIDEO_CODEC == 13) {
+                target_codec = "av1";
             }
-            bilibili::LiveStreamFormat format;
-            for (auto& i : stream.format) {
-                format = i;
-                break;
+
+            bool found = false;
+            for (const auto& s : liveRoomPlayInfo.playurl_info.playurl.stream) {
+                for (const auto& f : s.format) {
+                    if (target_codec == "hevc" && f.format_name == "flv")
+                        continue;
+                    for (const auto& c : f.codec) {
+                        if (c.codec_name == target_codec) {
+                            liveUrl = c;
+                            found = true;
+                            brls::Logger::info("Selected preferred live stream: protocol={}, format={}, codec={}",
+                                               s.protocol_name, f.format_name, c.codec_name);
+                            break;
+                        }
+                    }
+                    if (found) break;
+                }
+                if (found) break;
             }
-            for (auto& i : format.codec) {
-                liveUrl = i;
-                break;
+
+            // 若偏好编码未找到，保底按顺序选取首个可用流
+            if (!found) {
+                for (const auto& s : liveRoomPlayInfo.playurl_info.playurl.stream) {
+                    for (const auto& f : s.format) {
+                        for (const auto& c : f.codec) {
+                            liveUrl = c;
+                            found = true;
+                            brls::Logger::info("Fallback to first live stream: protocol={}, format={}, codec={}",
+                                               s.protocol_name, f.format_name, c.codec_name);
+                            break;
+                        }
+                        if (found) break;
+                    }
+                    if (found) break;
+                }
             }
             brls::sync([ASYNC_TOKEN]() {
                 ASYNC_RELEASE

@@ -136,6 +136,7 @@ void LiveActivity::setVideoQuality() {
             "wiliwili/player/quality"_i18n, this->getQualityDescriptionList(),
             [this](int selected) {
                 defaultQuality = liveUrl.accept_qn[selected];
+                ProgramConfig::instance().setSettingItem(SettingItem::LIVE_QUALITY, defaultQuality);
                 this->requestData(this->liveData.roomid);
             },
             this->getCurrentQualityIndex());

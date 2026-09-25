@@ -32,6 +32,7 @@
 #include "utils/string_helper.hpp"
 #include "utils/shortcut_helper.hpp"
 #include "presenter/video_detail.hpp"
+#include "presenter/live_data.hpp"
 #include "activity/player_activity.hpp"
 #include "activity/search_activity_tv.hpp"
 #include "view/video_view.hpp"
@@ -95,6 +96,8 @@ unsigned int sceLibcHeapSize             = 24 * 1024 * 1024;
 #define WILI_UI_SCALE_DEFAULT 0
 // 默认音频质量 (4 为 低, PSV 的喇叭质量差，音质高低无区别，设置成低可以减少流量)
 #define WILI_AUDIO_QUALITY_DEFAULT 4
+#define WILI_LIVE_QUALITY_DEFAULT 150
+#define WILI_LIVE_QUALITY_INDEX_DEFAULT 4
 #define WILI_DNS_CACHE_TIMEOUT 3600000
 #else
 // 默认清晰度 (116 为 1080P@60)
@@ -110,6 +113,8 @@ unsigned int sceLibcHeapSize             = 24 * 1024 * 1024;
 #define WILI_UI_SCALE_DEFAULT 1
 // 默认音频质量 (2 为 高)
 #define WILI_AUDIO_QUALITY_DEFAULT 2
+#define WILI_LIVE_QUALITY_DEFAULT 0
+#define WILI_LIVE_QUALITY_INDEX_DEFAULT 0
 // DNS 缓存时间
 #define WILI_DNS_CACHE_TIMEOUT 60000
 #endif
@@ -259,6 +264,11 @@ std::unordered_map<SettingItem, ProgramOption> ProgramConfig::SETTING_MAP = {
     {SettingItem::VIDEO_CODEC, {"video_codec", {"AVC/H.264", "HEVC/H.265", "AV1"}, {7, 12, 13}, 0}},
     {SettingItem::AUDIO_QUALITY,
      {"audio_quality", {"Dolby Atmos", "Hi-Res", "High", "Medium", "Low"}, {30250, 30251, 30280, 30232, 30216}, WILI_AUDIO_QUALITY_DEFAULT}},
+    {SettingItem::LIVE_QUALITY,
+     {"live_quality",
+      {"Auto", "1080P60 (Origin)", "1080P+ (Blu-ray)", "1080P (Super)", "720P (High)", "480P (Smooth)"},
+      {0, 10000, 400, 250, 150, 80},
+      WILI_LIVE_QUALITY_INDEX_DEFAULT}},
     {SettingItem::DANMAKU_FILTER_LEVEL,
      {"danmaku_filter_level", {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"}, {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, 0}},
     {SettingItem::DANMAKU_STYLE_AREA, {"danmaku_style_area", {"1/4", "1/2", "3/4", "1"}, {25, 50, 75, 100}, 3}},
@@ -566,6 +576,10 @@ void ProgramConfig::load() {
         // 用户未登录时跟随官方将默认清晰度设置到 360P
         VideoDetail::defaultQuality = 16;
     }
+
+    // 初始化直播清晰度
+    LiveDataRequest::defaultQuality = getSettingItem(SettingItem::LIVE_QUALITY,
+                                                     WILI_LIVE_QUALITY_DEFAULT);
 
     // 加载完成后自动播放
     MPVCore::AUTO_PLAY = getBoolOption(SettingItem::PLAYER_AUTO_PLAY);
@@ -1110,6 +1124,7 @@ void ProgramConfig::init() {
             ProgramConfig::instance().setRefreshToken(token);
             // 用户重新登录后，恢复默认清晰度设置
             VideoDetail::defaultQuality = WILI_VIDEO_QUALITY_DEFAULT;
+            LiveDataRequest::defaultQuality = WILI_LIVE_QUALITY_DEFAULT;
         });
     BILI::setProxy(httpProxy, httpsProxy);
     BILI::setTlsVerify(getBoolOption(SettingItem::TLS_VERIFY));

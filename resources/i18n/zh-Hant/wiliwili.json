@@ -28,6 +28,7 @@
         "video_codec": "影像編碼",
         "audio_quality": "影像音質",
         "video_format": "影像格式",
+        "live_quality": "直播畫質",
         "dolby": "杜比全景聲",
         "hi_res": "Hi-Res 無損",
         "window_fullscreen_on_app_fullscreen": "應用內全屏時自動切換視窗全屏"

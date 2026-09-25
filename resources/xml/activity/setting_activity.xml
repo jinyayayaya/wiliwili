@@ -76,6 +76,9 @@
                             <SelectorCell
                                     id="setting/audio/quality"/>
 
+                            <SelectorCell
+                                    id="setting/live/quality"/>
+
                         </brls:Box>
                         <brls:Header
                                 width="auto"

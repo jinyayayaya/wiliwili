@@ -28,6 +28,7 @@
         "video_codec": "Codec Video",
         "audio_quality": "Qualità audio",
         "video_format": "Formato video",
+        "live_quality": "Qualità live",
         "window_fullscreen_on_app_fullscreen": "Schermo intero della finestra quando si entra in schermo intero in-app",
         "dolby": "Dolby Atmos",
         "hi_res": "Hi-Res"

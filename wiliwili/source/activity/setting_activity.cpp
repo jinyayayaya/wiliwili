@@ -15,6 +15,7 @@
 #include "activity/setting_activity.hpp"
 #include "activity/search_activity_tv.hpp"
 #include "activity/hint_activity.hpp"
+#include "presenter/live_data.hpp"
 #include "fragment/setting_network.hpp"
 #include "fragment/test_rumble.hpp"
 #include "utils/config_helper.hpp"
@@ -566,6 +567,18 @@ void SettingActivity::onContentAvailable() {
         conf.getIntOptionIndex(SettingItem::AUDIO_QUALITY), [bandwidthOption](int data) {
             ProgramConfig::instance().setSettingItem(SettingItem::AUDIO_QUALITY, bandwidthOption.rawOptionList[data]);
             bilibili::BilibiliClient::AUDIO_QUALITY = bandwidthOption.rawOptionList[data];
+            return true;
+        });
+
+    /// LiveQuality
+    auto liveQualityOption = conf.getOptionData(SettingItem::LIVE_QUALITY);
+    selectorLiveQuality->init(
+        "wiliwili/setting/app/playback/live_quality"_i18n,
+        {"wiliwili/player/setting/aspect/auto"_i18n, "原画 (1080P60)", "蓝光", "超清 (1080P)", "高清 (720P)", "流畅 (480P)"},
+        conf.getIntOptionIndex(SettingItem::LIVE_QUALITY), [liveQualityOption](int data) {
+            int qn = liveQualityOption.rawOptionList[data];
+            ProgramConfig::instance().setSettingItem(SettingItem::LIVE_QUALITY, qn);
+            LiveDataRequest::defaultQuality = qn;
             return true;
         });
 

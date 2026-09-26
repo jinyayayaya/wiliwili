@@ -346,7 +346,8 @@ void SettingActivity::onContentAvailable() {
                               // 垂直同步
                               ProgramConfig::instance().setSettingItem(SettingItem::LIMITED_FPS, 0);
                               ProgramConfig::instance().setSettingItem(SettingItem::SWAP_INTERVAL, data + 1);
-                              brls::Application::setLimitedFPS(0);
+                               // Keep a software cap as a fallback when fullscreen VSync does not block.
+                               brls::Application::setLimitedFPS(60);
                               brls::Application::setSwapInterval(data + 1);
                           } else {
                               // 限制帧数

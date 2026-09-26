@@ -1348,6 +1348,7 @@ void MPVCore::disableDimming(bool disable) {
     brls::Logger::info("disableDimming: {}", disable);
     brls::Application::getPlatform()->disableScreenDimming(disable, "Playing video", APPVersion::getPackageName());
     int deactivatedTime = ProgramConfig::instance().getSettingItem(SettingItem::DEACTIVATED_TIME, 2000);
+    if (deactivatedTime <= 0) deactivatedTime = 2000;
     if (deactivatedTime > 0) {
         brls::Application::setAutomaticDeactivation(!disable);
     }

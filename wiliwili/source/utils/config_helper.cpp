@@ -288,7 +288,7 @@ std::unordered_map<SettingItem, ProgramOption> ProgramConfig::SETTING_MAP = {
      {"danmaku_style_speed", {"0.5", "0.75", "1.0", "1.25", "1.5"}, {150, 125, 100, 75, 50}, 2}},
     {SettingItem::DANMAKU_RENDER_QUALITY,
      {"danmaku_render_quality", {"100%", "95%", "90%", "80%", "70%", "60%", "50%"}, {100, 95, 90, 80, 70, 60, 50}, 0}},
-    {SettingItem::LIMITED_FPS, {"limited_fps", {"0", "30", "60", "90", "120"}, {0, 30, 60, 90, 120}, 2}},
+    {SettingItem::LIMITED_FPS, {"limited_fps", {"0", "30", "60", "90", "120"}, {0, 30, 60, 90, 120}, 0}},
     {SettingItem::SWAP_INTERVAL, {"swap_interval", {"0", "1", "2", "3", "4"}, {0, 1, 2, 3, 4}, 1}},
     {SettingItem::DEACTIVATED_TIME, {"deactivated_time", {}, {}, 2000}},
     {SettingItem::DEACTIVATED_FPS, {"deactivated_fps", {}, {}, 5}},
@@ -713,12 +713,14 @@ void ProgramConfig::load() {
 
     // 初始化FPS限制
     // Keep UI rendering bounded even when fullscreen swap-vsync does not block.
-    int limitedFPS = getSettingItem(SettingItem::LIMITED_FPS, 60);
+    int configuredFPS = getSettingItem(SettingItem::LIMITED_FPS, 0);
+    int limitedFPS = configuredFPS > 0 ? configuredFPS : 60;
     brls::Application::setLimitedFPS(limitedFPS);
-    VideoContext::swapInterval = limitedFPS == 0 ? getSettingItem(SettingItem::SWAP_INTERVAL, 1) : 0;
+    VideoContext::swapInterval = configuredFPS == 0 ? getSettingItem(SettingItem::SWAP_INTERVAL, 1) : 0;
 
     // 初始化进入闲置状态需要的时间 (ms);
     int deactivatedTime = getSettingItem(SettingItem::DEACTIVATED_TIME, 2000);
+    if (deactivatedTime <= 0) deactivatedTime = 2000;
     if (deactivatedTime > 0) {
         // Reduce FPS to a lower value after a period of inactivity
         brls::Application::setAutomaticDeactivation(true);

@@ -10,6 +10,8 @@
 */
 
 #include <borealis.hpp>
+#include <chrono>
+#include <thread>
 
 #include "utils/config_helper.hpp"
 #include "utils/activity_helper.hpp"
@@ -92,6 +94,25 @@ int main(int argc, char* argv[]) {
                     {"language", brls::Application::getLocale()},
                     {"window", fmt::format("{}x{}", brls::Application::windowWidth, brls::Application::windowHeight)}})
     APPVersion::instance().checkUpdate();
+
+    // Ensure idle frame pacing even if windowing backend wakes up prematurely on async events (e.g. X11 PresentNotify)
+    brls::Application::getRunLoopEvent()->subscribe([]() {
+        static brls::Time last_frame_time = 0;
+        brls::Time now = brls::getCPUTimeUsec();
+        if (!brls::Application::hasActiveEvent()) {
+            double deactivatedFrameTime = brls::Application::getDeactivatedFrameTime();
+            if (deactivatedFrameTime > 0.0) {
+                brls::Time target_frame_interval = (brls::Time)(deactivatedFrameTime * 1000000.0);
+                if (last_frame_time > 0 && now > last_frame_time) {
+                    brls::Time elapsed = now - last_frame_time;
+                    if (elapsed < target_frame_interval) {
+                        std::this_thread::sleep_for(std::chrono::microseconds(target_frame_interval - elapsed));
+                    }
+                }
+            }
+        }
+        last_frame_time = brls::getCPUTimeUsec();
+    });
 
     // Run the app
     // brls::Application::setLimitedFPS(60);

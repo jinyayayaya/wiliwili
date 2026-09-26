@@ -960,6 +960,9 @@ void MPVCore::eventMainLoop() {
                 brls::Logger::info("========> MPV_STOP");
                 mpvCoreEvent.fire(MpvEventEnum::MPV_STOP);
                 video_stopped = true;
+                // The core-idle property can arrive after the player activity is
+                // destroyed. Restore the UI idle policy directly on end of file.
+                disableDimming(false);
                 auto node     = (mpv_event_end_file *)event->data;
                 if (node->reason == MPV_END_FILE_REASON_ERROR) {
                     mpv_error_code = node->error;
@@ -1200,7 +1203,14 @@ void MPVCore::resume() { command_async("set", "pause", "no"); }
 
 void MPVCore::pause() { command_async("set", "pause", "yes"); }
 
-void MPVCore::stop() { command_async("stop"); }
+void MPVCore::stop() {
+    // Do not wait for the asynchronous core-idle property event to restore the
+    // low-power UI mode. The player activity may be destroyed before it arrives.
+    video_stopped = true;
+    video_playing = false;
+    disableDimming(false);
+    command_async("stop");
+}
 
 void MPVCore::seek(int64_t p) { command_async("seek", p, "absolute"); }
 
